@@ -1,0 +1,62 @@
+Description: Downloads latest Google Chrome disk image and builds a package.
+Identifier: com.github.fastly.recipes.jamf.GoogleChrome-test
+Input:
+  API_PASSWORD: '%PUT YOUR PASSWORD VARIABLE HERE%'
+  API_USERNAME: PUT YOUR ACCOUNT USERNAME OR USERNAME VARIABLE HERE
+  CATEGORY: Browsers
+  GROUP_NAME: '%NAME%-update-smart'
+  GROUP_TEMPLATE: JamfSmartGroupTemplate-NeedsUpdateInstall-Test.xml
+  JSS_URL: PUT YOUR JSS URL HERE
+  NAME: Google Chrome
+  PATCH_ENABLED: 'true'
+  PATCH_NAME: '%NAME%'
+  PATCH_SOFTWARE_TITLE: '%NAME%'
+  PATCH_TEMPLATE: JamfPatchTemplate-SS-Test.xml
+  POLICY_CATEGORY: Testing
+  POLICY_NAME: '%NAME%'
+  POLICY_TEMPLATE: JamfPolicyTemplate-Install-wSS-Test.xml
+  SELF_SERVICE_DESCRIPTION: Google Chrome is a cross-platform web browser developed
+    by Google.
+  SELF_SERVICE_DISPLAY_NAME: '%NAME% - %version%'
+  SELF_SERVICE_ICON: '%NAME%.png'
+  TESTING_GROUP_NAME: Testing
+  UPDATE_PREDICATE: pkg_uploaded == False
+MinimumVersion: 0.4.0
+ParentRecipe: com.github.autopkg.pkg.googlechrome
+ParentRecipeTrustInfo:
+Process:
+- Arguments:
+    category_name: '%CATEGORY%'
+  Processor: com.github.grahampugh.jamf-upload.processors/JamfCategoryUploader
+- Arguments:
+    computergroup_name: '%GROUP_NAME%'
+    computergroup_template: '%GROUP_TEMPLATE%'
+    replace_group: 'true'
+  Processor: com.github.grahampugh.jamf-upload.processors/JamfComputerGroupUploader
+- Arguments:
+    API_PASSWORD: '%API_PASSWORD%'
+    API_USERNAME: '%API_USERNAME%'
+    JSS_URL: '%JSS_URL%'
+  Processor: com.github.grahampugh.jamf-upload.processors/JamfPackageUploader
+- Arguments:
+    predicate: '%UPDATE_PREDICATE%'
+  Processor: StopProcessingIf
+- Arguments:
+    icon: '%SELF_SERVICE_ICON%'
+    policy_name: '%POLICY_NAME%'
+    policy_template: '%POLICY_TEMPLATE%'
+    replace_policy: 'true'
+  Processor: com.github.grahampugh.jamf-upload.processors/JamfPolicyUploader
+- Arguments:
+    API_PASSWORD: '%API_PASSWORD%'
+    API_USERNAME: '%API_USERNAME%'
+    JSS_URL: '%JSS_URL%'
+    patch_icon_policy_name: '%POLICY_NAME%'
+    patch_name: '%PATCH_NAME%'
+    patch_softwaretitle: '%PATCH_SOFTWARE_TITLE%'
+    patch_template: '%PATCH_TEMPLATE%'
+    replace_patch: 'true'
+  Processor: com.github.grahampugh.jamf-upload.processors/JamfPatchUploader
+- Arguments:
+    slack_webhook_url: '%SLACK_WEBHOOK_URL%'
+  Processor: com.github.grahampugh.jamf-upload.processors/JamfUploaderSlacker
