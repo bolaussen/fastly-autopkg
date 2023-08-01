@@ -1,12 +1,12 @@
 Description: Downloads latest Google Chrome disk image and builds a package.
 Identifier: com.github.fastly.recipes.jamf.GoogleChrome-test
 Input:
-  API_PASSWORD: '%PUT YOUR PASSWORD VARIABLE HERE%'
-  API_USERNAME: PUT YOUR ACCOUNT USERNAME OR USERNAME VARIABLE HERE
+  API_PASSWORD: '%JAMF_SANDBOX_API_PASSWORD%'
+  API_USERNAME: '%JAMF_SANDBOX_API_USERNAME%'
   CATEGORY: Browsers
   GROUP_NAME: '%NAME%-update-smart'
   GROUP_TEMPLATE: JamfSmartGroupTemplate-NeedsUpdateInstall-Test.xml
-  JSS_URL: PUT YOUR JSS URL HERE
+  JSS_URL: '%JAMF_SANDBOX_URL%'
   NAME: Google Chrome
   PATCH_ENABLED: 'true'
   PATCH_NAME: '%NAME%'
