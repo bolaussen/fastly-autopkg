@@ -1,7 +1,3 @@
-# it-cpe-opensource
+# Using AutoPKG with GitHub Actions
 
-This repo contains various tools used by the CPE team at Fastly to manage our software deployment systems.
-
-## AutoPkg tools
-
-Example workflows for running AutoPkg with Github Actions.
+This repo contains a forked and updated example of the files and configurations needed to run AutoPKG using GitHub Actions.
