@@ -24,16 +24,6 @@ Input:
 MinimumVersion: 0.4.0
 ParentRecipe: com.github.autopkg.pkg.googlechrome
 ParentRecipeTrustInfo:
-  non_core_processors: {}
-  parent_recipes:
-    com.github.autopkg.download.googlechrome:
-      git_hash: b0efb8ccf082444c2e7f3774134352a3c5dbafc8
-      path: ~/work/fastly-autopkg/fastly-autopkg/repos/com.github.autopkg.recipes/GoogleChrome/GoogleChrome.download.recipe
-      sha256_hash: 2bdc3f2e3cbdca9c01181f97f5483554a22c48cc078a9c170e57bb6fd2a4d676
-    com.github.autopkg.pkg.googlechrome:
-      git_hash: f29f399c54adee7122e9fdc3c1ea7ed4c67388a4
-      path: ~/work/fastly-autopkg/fastly-autopkg/repos/com.github.autopkg.recipes/GoogleChrome/GoogleChrome.pkg.recipe
-      sha256_hash: 5acdf716353ccc57f021008bc5b4b55a5cb4e578e0f96864b71d4d2d29742ec8
 Process:
 - Arguments:
     category_name: '%CATEGORY%'
