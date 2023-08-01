@@ -3,17 +3,19 @@ name: Autopkg run
 on:
   watch:
     types: [started]
-  schedule:
-    - cron: 00 14 * * 1-5
+  # Commenting out the automated schedule so this AutoPKG build doesn't run on its own.
+  # Keep this part in to run on a set schedule
+  # schedule: 
+    # - cron: 00 14 * * 1-5
   workflow_dispatch: # manually triggered
     inputs:
       recipe:
-        description: Optional recipe to run (e.g. Firefox.munki)
+        description: Optional recipe to run (e.g. Google/GoogleChrome-test.jamf.recipe.yaml)
         required: false
       debug:
         description: Enable debug
-        required: true
-        default: 'True'
+        required: false
+        default: 'False'
         type: choice
         options:
         - 'False'
@@ -24,27 +26,19 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 90 # Keeps your builds from running too long
     env:
-      AUTOPKG_SHA256: "b4e8f9e50b429d19658285aa9a93b6fbf6d11c49743f4ee0026011444ef6c8da"
-      AUTOPKG_URL: "https://github.com/autopkg/autopkg/releases/download/v2.4.1/autopkg-2.4.1.pkg"
-      MUNKI_SHA256: "ba52389db369dd123297bfdf30daf37baba44bf967144382363b3b08ab5fab90"
-      MUNKI_URL: "https://github.com/munki/munki/releases/download/v5.6.3/munkitools-5.6.3.4401.pkg"
+      AUTOPKG_SHA256: "2ff34daf02256ad81e2c74c83a9f4c312fa2f9dd212aba59e0cef0e6ba1be5c9"
+      AUTOPKG_URL: "https://github.com/autopkg/autopkg/releases/download/v2.7.2/autopkg-2.7.2.pkg"
     steps:
     - name: Checkout AutoPkg recipes
       uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 #v3.5.3 Pin SHA1 hash instead of version
       with:
         fetch-depth: 1
 
-    - name: Install Python dependencies
+    - name: Install Python dependencies #(remove pyyaml line if you don't use yaml recipes)
       run: |
-        python3 -m pip install --upgrade pip
+        pip install --upgrade pip
         pip3 install -r requirements.txt
-
-    - name: Install Munki
-      run: |
-        curl -L ${{ env.MUNKI_URL }} --output /tmp/munkitools.pkg
-        echo "${{ env.MUNKI_SHA256 }} */tmp/munkitools.pkg" | shasum -c
-        if [[ $? != "0" ]]; then exit 1; fi
-        sudo installer -pkg /tmp/munkitools.pkg -target /
+        pip install pyyaml
 
     - name: Install AutoPkg
       run: |
@@ -53,32 +47,20 @@ jobs:
         if [[ $? != "0" ]]; then exit 1; fi
         sudo installer -pkg /tmp/autopkg.pkg -target /
 
-    - name: Checkout your Munki LFS repo
-      uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 #v3.5.3
-      with:
-        repository: replace_with_your_munki_repo
-        # GitHub deploy key with read/write access to repo
-        ssh-key: ${{ secrets.CPE_MUNKI_LFS_DEPLOY_KEY }}
-        fetch-depth: 1
-        path: munki_repo
-
     - name: Configure AutoPkg and Git
       run: |
         defaults write com.github.autopkg RECIPE_OVERRIDE_DIRS "$(pwd)"/overrides/
         defaults write com.github.autopkg RECIPE_REPO_DIR "$(pwd)"/repos/
         defaults write com.github.autopkg FAIL_RECIPES_WITHOUT_TRUST_INFO -bool YES
-        defaults write com.github.autopkg MUNKI_REPO "$GITHUB_WORKSPACE"/munki_repo
-        defaults write com.github.autopkg GITHUB_TOKEN "${{ secrets.GITHUB_TOKEN }}"
+        defaults write com.github.autopkg GITHUB_TOKEN "${{ secrets.AUTOPKG_PRIVATE_REPO_ACCESS }}"
+        defaults write com.github.autopkg SANDBOX_API "${{ secrets.SANDBOX_API_AUTOPKG }}"
+        defaults write com.github.autopkg SLACK_WEBHOOK_URL "${{ secrets.SLACK_WEBHOOK_URL }}"
         git config --global user.name "runner"
         git config --global user.email "runner@githubactions.local"
 
     - name: Add AutoPkg repos
       run: |
         for repo in $(cat repo_list.txt); do autopkg repo-add "$repo"; done
-
-    - name: Run makecatalogs
-      run: |
-        /usr/local/munki/makecatalogs munki_repo
 
     - name: Run AutoPkg
       run: |
@@ -91,7 +73,7 @@ jobs:
         fi
       env:
         RECIPE: ${{ github.event.inputs.recipe }}
-        SLACK_WEBHOOK_TOKEN: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
     - name: Create Trust Info pull request
       if: env.TITLE
