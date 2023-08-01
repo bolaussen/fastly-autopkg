@@ -36,9 +36,6 @@ ParentRecipeTrustInfo:
       sha256_hash: 5acdf716353ccc57f021008bc5b4b55a5cb4e578e0f96864b71d4d2d29742ec8
 Process:
 - Arguments:
-    category_name: '%CATEGORY%'
-  Processor: com.github.grahampugh.jamf-upload.processors/JamfCategoryUploader
-- Arguments:
     computergroup_name: '%GROUP_NAME%'
     computergroup_template: '%GROUP_TEMPLATE%'
     replace_group: 'true'
