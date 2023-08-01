@@ -33,16 +33,16 @@ jobs:
       uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 #v3.5.3 Pin SHA1 hash instead of version
       with:
         fetch-depth: 1
+    - name: Setup Python
+      uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 #v4.7.0
+      with:
+        python-version: 3.11
 
     - name: Install Python dependencies #(remove pyyaml line if you don't use yaml recipes)
       run: |
         pip install --upgrade pip
         pip3 install -r requirements.txt
         pip install pyyaml
-    - name: Setup Python
-      uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 #v4.7.0
-      with:
-        python-version: 3.11
 
     - name: Install AutoPkg
       run: |
