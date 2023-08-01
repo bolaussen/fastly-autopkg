@@ -39,6 +39,10 @@ jobs:
         pip install --upgrade pip
         pip3 install -r requirements.txt
         pip install pyyaml
+    - name: Setup Python
+      uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 #v4.7.0
+      with:
+        python-version: 3.11
 
     - name: Install AutoPkg
       run: |
