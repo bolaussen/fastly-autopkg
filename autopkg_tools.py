@@ -4,6 +4,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 # Copyright (c) tig <https://6fx.eu/>.
 # Copyright (c) Gusto, Inc.
+# Copyright (c) Fastly, Inc.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 #
@@ -18,6 +19,7 @@
 import os
 import sys
 import json
+import yaml
 import plistlib
 import requests
 import subprocess
@@ -26,8 +28,8 @@ from optparse import OptionParser
 from datetime import datetime
 
 DEBUG = os.environ.get("DEBUG", False)
-SLACK_WEBHOOK = os.environ.get("SLACK_WEBHOOK_TOKEN", None)
-MUNKI_REPO = os.path.join(os.getenv("GITHUB_WORKSPACE", "/tmp/"), "munki_repo")
+SLACK_WEBHOOK = os.environ.get("SLACK_WEBHOOK_URL", None)
+JAMF_REPO = os.path.join(os.getenv("GITHUB_WORKSPACE", "/tmp/"), "jamf-repo")
 OVERRIDES_DIR = os.path.relpath("overrides/")
 RECIPE_TO_RUN = os.environ.get("RECIPE", None)
 
@@ -43,10 +45,10 @@ class Recipe(object):
         self._has_run = False
 
     @property
-    def plist(self):
+    def yaml(self):
         if self._keys is None:
             with open(self.path, "rb") as f:
-                self._keys = plistlib.load(f)
+                self._keys = yaml.safe_load(f)
 
         return self._keys
 
@@ -69,7 +71,7 @@ class Recipe(object):
 
     @property
     def name(self):
-        return self.plist["Input"]["NAME"]
+        return self.yaml["Input"]["NAME"]
 
     def verify_trust_info(self):
         cmd = ["/usr/local/bin/autopkg", "verify-trust-info", self.path, "-vvv"]
@@ -113,10 +115,10 @@ class Recipe(object):
         imported_items = []
         if report_data["summary_results"]:
             # This means something happened
-            munki_results = report_data["summary_results"].get(
-                "munki_importer_summary_result", {}
+            jamf_results = report_data["summary_results"].get(
+                "jamf_uploader_summary_result", {}
             )
-            imported_items.extend(munki_results.get("data_rows", []))
+            imported_items.extend(jamf_results.get("data_rows", []))
 
         return {"imported": imported_items, "failed": failed_items}
 
@@ -169,7 +171,9 @@ def git_run(cmd):
         hide_cmd_output = False
 
     try:
-        result = subprocess.run(" ".join(cmd), shell=True, cwd=MUNKI_REPO, capture_output=hide_cmd_output)
+        result = subprocess.run(
+            " ".join(cmd), shell=True, cwd=JAMF_REPO, capture_output=hide_cmd_output
+        )
     except subprocess.CalledProcessError as e:
         print(e.stderr)
         raise e
@@ -229,7 +233,7 @@ def parse_recipes(recipes):
         for recipe in recipes:
             ext = os.path.splitext(recipe)[1]
             if ext != ".recipe":
-                recipe_list.append(recipe + ".recipe")
+                recipe_list.append(recipe)
             else:
                 recipe_list.append(recipe)
     else:
@@ -238,8 +242,12 @@ def parse_recipes(recipes):
             parser = json.load
         elif ext == ".plist":
             parser = plistlib.load
+        elif ext == ".yaml":
+            parser = yaml.safe_load
         else:
-            print(f'Invalid run list extension "{ ext }" (expected plist or json)')
+            print(
+                f'Invalid run list extension "{ ext }" (expected plist or json or yaml)'
+            )
             sys.exit(1)
 
         with open(recipes, "rb") as f:
@@ -253,7 +261,7 @@ def import_icons():
     branch_name = "icon_import_{}".format(datetime.now().strftime("%Y-%m-%d"))
     checkout(branch_name)
     result = subprocess.check_call(
-        "/usr/local/munki/iconimporter munki_repo", shell=True
+        "/usr/local/jamf/iconimporter jamf-repo", shell=True
     )
     git_run(["add", "icons/"])
     git_run(["commit", "-m", "Added new icons"])
@@ -272,6 +280,7 @@ def slack_alert(recipe, opts):
     if not recipe.verified:
         task_title = f"{ recipe.name } failed trust verification"
         task_description = recipe.results["message"]
+    
     elif recipe.error:
         task_title = f"Failed to import { recipe.name }"
         if not recipe.results["failed"]:
@@ -281,17 +290,9 @@ def slack_alert(recipe, opts):
                 recipe.results["failed"][0]["message"],
                 recipe.results["failed"][0]["traceback"],
             )
-
-            if "No releases found for repo" in task_description:
-                # Just no updates
-                return
     elif recipe.updated:
         task_title = "Imported %s %s" % (recipe.name, str(recipe.updated_version))
-        task_description = (
-            "*Catalogs:* %s \n" % recipe.results["imported"][0]["catalogs"]
-            + "*Package Path:* `%s` \n" % recipe.results["imported"][0]["pkg_repo_path"]
-            + "*Pkginfo Path:* `%s` \n" % recipe.results["imported"][0]["pkginfo_path"]
-        )
+        task_description = "No further action needed."
     else:
         # Also no updates
         return
@@ -329,8 +330,8 @@ def main():
     parser.add_option(
         "-g",
         "--gitrepo",
-        help="Path to git repo. Defaults to MUNKI_REPO from Autopkg preferences.",
-        default=MUNKI_REPO,
+        help="Path to git repo. Defaults to JAMF_REPO from Autopkg preferences.",
+        default=JAMF_REPO,
     )
     parser.add_option(
         "-d",
@@ -348,7 +349,7 @@ def main():
         "-i",
         "--icons",
         action="store_true",
-        help="Run iconimporter against git munki repo.",
+        help="Run iconimporter against git jamf repo.",
     )
 
     (opts, _) = parser.parse_args()
