@@ -1,3 +1,7 @@
+---
+> This repo has been moved to [betsykeiser/autopkg-gh-runner](https://github.com/betsykeiser/autopkg-gh-runner/tree/main) in order for me to more easily maintain it. 
+---
+
 # Using AutoPKG with GitHub Actions
 
 This repo contains a forked and modified example of the files and configurations needed to run AutoPKG using GitHub Actions and uploading to Jamf Pro.
