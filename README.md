@@ -1,5 +1,5 @@
 ---
-> This repo has been moved to [betsykeiser/autopkg-gh-runner](https://github.com/betsykeiser/autopkg-gh-runner/tree/main) in order for me to more easily maintain it. 
+# This repo has been moved to [betsykeiser/autopkg-gh-runner](https://github.com/betsykeiser/autopkg-gh-runner/tree/main) in order for me to more easily maintain it. 
 ---
 
 # Using AutoPKG with GitHub Actions
